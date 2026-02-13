@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .canvas-shadow { filter: drop-shadow(0 30px 50px rgba(0,0,0,0.15)); }
@@ -87,18 +86,12 @@
                 selectedGradient: 0,
                 bgImage: null,
                 gradients: [
-                    { c1: '#2563eb', c2: '#7c3aed' }, // Royal Blue
-                    { c1: '#db2777', c2: '#9333ea' }, // Deep Pink
-                    { c1: '#059669', c2: '#10b981' }, // Emerald
-                    { c1: '#f59e0b', c2: '#ea580c' }, // Amber
-                    { c1: '#0f172a', c2: '#334155' }, // Carbon
-                    { c1: '#4f46e5', c2: '#06b6d4' }, // Ocean
-                    { c1: '#ef4444', c2: '#991b1b' }, // Crimson
-                    { c1: '#8b5cf6', c2: '#d946ef' }, // Neon
-                    { c1: '#14b8a6', c2: '#0f766e' }, // Teal
-                    { c1: '#111827', c2: '#6b7280' }, // Dark Grey
-                    { c1: '#f472b6', c2: '#fb7185' }, // Soft Rose
-                    { c1: '#312e81', c2: '#1e3a8a' }  // Deep Navy
+                    { c1: '#2563eb', c2: '#7c3aed' }, { c1: '#db2777', c2: '#9333ea' },
+                    { c1: '#059669', c2: '#10b981' }, { c1: '#f59e0b', c2: '#ea580c' },
+                    { c1: '#0f172a', c2: '#334155' }, { c1: '#4f46e5', c2: '#06b6d4' },
+                    { c1: '#ef4444', c2: '#991b1b' }, { c1: '#8b5cf6', c2: '#d946ef' },
+                    { c1: '#14b8a6', c2: '#0f766e' }, { c1: '#111827', c2: '#6b7280' },
+                    { c1: '#f472b6', c2: '#fb7185' }, { c1: '#312e81', c2: '#1e3a8a' }
                 ],
 
                 init() { this.$nextTick(() => { this.draw(); }); },
@@ -139,18 +132,37 @@
                     canvas.width = 851; canvas.height = 315;
                     const w = canvas.width; const h = canvas.height;
 
+                    
                     ctx.fillStyle = '#f1f5f9';
                     ctx.fillRect(0, 0, w, h);
 
+                 
                     const splitPoint = w * 0.42;
                     const grad = ctx.createLinearGradient(splitPoint, 0, w, h);
                     grad.addColorStop(0, this.gradients[this.selectedGradient].c1);
                     grad.addColorStop(1, this.gradients[this.selectedGradient].c2);
                     ctx.fillStyle = grad;
+                    
                     ctx.beginPath();
                     ctx.moveTo(splitPoint, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h); ctx.lineTo(splitPoint + 60, h);
                     ctx.closePath(); ctx.fill();
 
+                   
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(splitPoint, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h); ctx.lineTo(splitPoint + 60, h);
+                    ctx.closePath(); ctx.clip();
+                    
+                    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                    ctx.lineWidth = 1;
+                    for(let i=0; i<w*2; i+=10) {
+                        ctx.beginPath();
+                        ctx.moveTo(i, 0); ctx.lineTo(i - 100, h);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+
+            
                     ctx.fillStyle = 'rgba(255,255,255,0.08)';
                     ctx.beginPath(); ctx.arc(w * 0.85, h * 0.2, 80, 0, Math.PI * 2); ctx.fill();
 
@@ -161,6 +173,15 @@
                         }
                     }
 
+                    
+                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(splitPoint, 0);
+                    ctx.lineTo(splitPoint + 60, h);
+                    ctx.stroke();
+
+        
                     const imgX = 50; const imgY = 45; 
                     const imgW = splitPoint - 30; const imgH = h - 90;
 
@@ -178,6 +199,7 @@
                         this.roundRect(ctx, imgX, imgY - 15, imgW, imgH, 25, true);
                     }
 
+    
                     const textPaddingLeft = splitPoint + 100;
                     const maxTextWidth = w - textPaddingLeft - 60;
                     ctx.textAlign = 'left';
@@ -222,5 +244,5 @@
         }
     </script>
 </body>
-
 </html>
+
