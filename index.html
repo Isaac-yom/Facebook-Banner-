@@ -41,28 +41,8 @@
                                    class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none font-bold transition-all text-slate-700">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-xs font-black text-blue-600 uppercase tracking-widest block mb-3">Forme</label>
-                                <select x-model="shape" @change="draw()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold outline-none">
-                                    <option value="slant">Moderne</option>
-                                    <option value="wave">Vague</option>
-                                    <option value="full">Plein</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-xs font-black text-blue-600 uppercase tracking-widest block mb-3">Texture</label>
-                                <select x-model="texture" @change="draw()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold outline-none">
-                                    <option value="dots">Points</option>
-                                    <option value="grid">Grille</option>
-                                    <option value="grain">Grain</option>
-                                    <option value="none">Aucune</option>
-                                </select>
-                            </div>
-                        </div>
-
                         <div>
-                            <label class="text-xs font-black text-blue-600 uppercase tracking-widest block mb-3">4. Cliquez sur la couleur qui vous plaise</label>
+                            <label class="text-xs font-black text-blue-600 uppercase tracking-widest block mb-3">3. Cliquez sur la couleur qui vous plaise</label>
                             <div class="grid grid-cols-6 gap-3">
                                 <template x-for="(g, index) in gradients" :key="index">
                                     <button @click="selectedGradient = index; draw()" 
@@ -105,8 +85,6 @@
                 profession: '',
                 selectedGradient: 0,
                 bgImage: null,
-                shape: 'slant',
-                texture: 'dots',
                 gradients: [
                     { c1: '#2563eb', c2: '#7c3aed' }, { c1: '#db2777', c2: '#9333ea' },
                     { c1: '#059669', c2: '#10b981' }, { c1: '#f59e0b', c2: '#ea580c' },
@@ -130,17 +108,35 @@
                     reader.readAsDataURL(file);
                 },
 
+                wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+                    const words = text.split(' ');
+                    let line = '';
+                    let testY = y;
+                    for (let n = 0; n < words.length; n++) {
+                        let testLine = line + words[n] + ' ';
+                        let metrics = ctx.measureText(testLine);
+                        if (metrics.width > maxWidth && n > 0) {
+                            ctx.fillText(line.trim(), x, testY);
+                            line = words[n] + ' ';
+                            testY += lineHeight;
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    ctx.fillText(line.trim(), x, testY);
+                },
+
                 draw() {
                     const canvas = document.getElementById('mainCanvas');
                     const ctx = canvas.getContext('2d');
                     canvas.width = 851; canvas.height = 315;
                     const w = canvas.width; const h = canvas.height;
 
-                    // 1. FOND GRIS PERLE
+                    
                     ctx.fillStyle = '#f1f5f9';
                     ctx.fillRect(0, 0, w, h);
 
-                    // 2. ZONE COLORÉE (Serrée contre l'image)
+                 
                     const splitPoint = w * 0.42;
                     const grad = ctx.createLinearGradient(splitPoint, 0, w, h);
                     grad.addColorStop(0, this.gradients[this.selectedGradient].c1);
@@ -148,50 +144,44 @@
                     ctx.fillStyle = grad;
                     
                     ctx.beginPath();
-                    if (this.shape === 'full') {
-                        ctx.rect(0, 0, w, h);
-                    } else if (this.shape === 'wave') {
-                        ctx.moveTo(splitPoint, 0);
-                        ctx.lineTo(w, 0); ctx.lineTo(w, h);
-                        ctx.bezierCurveTo(splitPoint - 80, h, splitPoint + 120, 0, splitPoint + 60, h);
-                    } else { // Slant
-                        ctx.moveTo(splitPoint, 0);
-                        ctx.lineTo(w, 0); ctx.lineTo(w, h);
-                        ctx.lineTo(splitPoint + 60, h);
-                    }
-                    ctx.closePath();
-                    ctx.fill();
+                    ctx.moveTo(splitPoint, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h); ctx.lineTo(splitPoint + 60, h);
+                    ctx.closePath(); ctx.fill();
 
-                    // --- TEXTURES ---
+                   
                     ctx.save();
-                    ctx.clip();
-                    if (this.texture === 'dots') {
-                        ctx.fillStyle = 'rgba(255,255,255,0.12)';
-                        for(let i=splitPoint; i<w; i+=25) {
-                            for(let j=0; j<h; j+=25) {
-                                ctx.beginPath(); ctx.arc(i, j, 1.5, 0, Math.PI*2); ctx.fill();
-                            }
-                        }
-                    } else if (this.texture === 'grid') {
-                        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-                        for(let i=0; i<w; i+=20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
-                        for(let i=0; i<h; i+=20) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke(); }
-                    } else if (this.texture === 'grain') {
-                        for(let i=0; i<4000; i++) {
-                            ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.05})`;
-                            ctx.fillRect(Math.random()*w, Math.random()*h, 2, 2);
-                        }
+                    ctx.beginPath();
+                    ctx.moveTo(splitPoint, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h); ctx.lineTo(splitPoint + 60, h);
+                    ctx.closePath(); ctx.clip();
+                    
+                    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                    ctx.lineWidth = 1;
+                    for(let i=0; i<w*2; i+=10) {
+                        ctx.beginPath();
+                        ctx.moveTo(i, 0); ctx.lineTo(i - 100, h);
+                        ctx.stroke();
                     }
                     ctx.restore();
 
-                    // LIGNE DE BORDURE (Si Slant)
-                    if(this.shape === 'slant') {
-                        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-                        ctx.lineWidth = 2;
-                        ctx.beginPath(); ctx.moveTo(splitPoint, 0); ctx.lineTo(splitPoint + 60, h); ctx.stroke();
+            
+                    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                    ctx.beginPath(); ctx.arc(w * 0.85, h * 0.2, 80, 0, Math.PI * 2); ctx.fill();
+
+                    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                    for(let i=splitPoint+100; i<w; i+=25) {
+                        for(let j=0; j<h; j+=25) {
+                            ctx.beginPath(); ctx.arc(i, j, 1.5, 0, Math.PI*2); ctx.fill();
+                        }
                     }
 
-                    // 4. PHOTO (Format serré original)
+                    
+                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(splitPoint, 0);
+                    ctx.lineTo(splitPoint + 60, h);
+                    ctx.stroke();
+
+        
                     const imgX = 50; const imgY = 45; 
                     const imgW = splitPoint - 30; const imgH = h - 90;
 
@@ -200,6 +190,7 @@
                         ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 40; ctx.shadowOffsetX = 15;
                         this.roundRect(ctx, imgX, imgY - 15, imgW, imgH, 25);
                         ctx.fillStyle = "white"; ctx.fill(); ctx.clip();
+                        ctx.shadowBlur = 0;
                         let ratio = Math.max(imgW / this.bgImage.width, imgH / this.bgImage.height);
                         ctx.drawImage(this.bgImage, imgX + (imgW - this.bgImage.width * ratio)/2, imgY - 15, this.bgImage.width * ratio, this.bgImage.height * ratio);
                         ctx.restore();
@@ -208,23 +199,26 @@
                         this.roundRect(ctx, imgX, imgY - 15, imgW, imgH, 25, true);
                     }
 
-                    // 5. TEXTE
+    
                     const textPaddingLeft = splitPoint + 100;
                     const maxTextWidth = w - textPaddingLeft - 60;
                     ctx.textAlign = 'left';
                     
-                    ctx.fillStyle = this.shape === 'full' ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.7)';
+                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
                     ctx.font = 'bold 11px Plus Jakarta Sans';
                     ctx.letterSpacing = "4px";
                     ctx.fillText("PROFIL PROFESSIONNEL", textPaddingLeft, h/2 - 45);
 
                     ctx.fillStyle = '#ffffff';
                     ctx.font = '800 30px Plus Jakarta Sans';
+                    ctx.letterSpacing = "1px";
                     const prof = this.profession.toUpperCase() || 'TON MÉTIER ICI';
                     this.wrapText(ctx, prof, textPaddingLeft, h/2, maxTextWidth, 38);
 
-                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = '#ffffff';
                     ctx.fillRect(textPaddingLeft, h/2 + 55, 60, 4);
+                    ctx.globalAlpha = 1.0;
                 },
 
                 roundRect(ctx, x, y, width, height, radius, fill) {
@@ -239,18 +233,6 @@
                     ctx.closePath(); if (fill) ctx.fill();
                 },
 
-                wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-                    const words = text.split(' '); let line = '';
-                    for (let n = 0; n < words.length; n++) {
-                        let testLine = line + words[n] + ' ';
-                        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-                            ctx.fillText(line.trim(), x, y);
-                            line = words[n] + ' '; y += lineHeight;
-                        } else { line = testLine; }
-                    }
-                    ctx.fillText(line.trim(), x, y);
-                },
-
                 download() {
                     const canvas = document.getElementById('mainCanvas');
                     const link = document.createElement('a');
@@ -263,5 +245,8 @@
     </script>
 </body>
 </html>
+
+
+
 
 
