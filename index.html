@@ -42,7 +42,36 @@
                         </div>
 
                         <div>
-                            <label class="text-xs font-black text-blue-600 uppercase tracking-widest block mb-3">3. Cliquez sur la couleur qui vous plaise</label>
+                            <label class="text-xs font-black text-blue-600 uppercase tracking-widest block mb-3">3. Choisissez la disposition qui vous aide</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button @click="layout = 'left'; draw()" 
+                                        :class="layout === 'left' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                                        class="py-3 rounded-xl text-[10px] font-black uppercase transition-all">Photo à Gauche</button>
+                                <button @click="layout = 'right'; draw()" 
+                                        :class="layout === 'right' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                                        class="py-3 rounded-xl text-[10px] font-black uppercase transition-all">Photo à Droite</button>
+                            </div>
+                        </div>
+                      
+                        <div>
+                            <label class="text-xs font-black text-blue-600 uppercase tracking-widest block mb-3">4. Personnalisez la forme qui vous plaise</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <select x-model="shape" @change="draw()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold outline-none cursor-pointer">
+                                    <option value="slant">Style Moderne</option>
+                                    <option value="wave">Style Vague</option>
+                                    <option value="full">Style Plein</option>
+                                </select>
+                                <select x-model="texture" @change="draw()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold outline-none cursor-pointer">
+                                    <option value="dots">Texture Points</option>
+                                    <option value="grid">Texture Grille</option>
+                                    <option value="grain">Texture Grain</option>
+                                    <option value="none">Sans Texture</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-black text-blue-600 uppercase tracking-widest block mb-3">5. Cliquez sur la couleur qui vous plaise</label>
                             <div class="grid grid-cols-6 gap-3">
                                 <template x-for="(g, index) in gradients" :key="index">
                                     <button @click="selectedGradient = index; draw()" 
@@ -67,11 +96,11 @@
                 </div>
                 
                 <div class="mt-12 text-center border-t border-slate-200 pt-8 pb-4">
-                    <p class="text-slate-500 text-sm">
+                    <p class="text-slate-500 text-sm">                                     
                         Développé avec passion par 
-                        <a href="https://isaac-myportfolio.yomservice.com/" target="_blank" class="signature-link font-extrabold text-blue-600">Isaac Yom</a>. 
+                        <a href="https://isaac-myportfolio.yomservice.com/" target="_blank" rel="noopener noreferrer" class="signature-link font-extrabold text-blue-600">Isaac Yom</a>. 
                         Inspiré par l'idée originale de 
-                        <a href="https://www.serahabijo.com/" target="_blank" class="signature-link font-extrabold text-pink-600">Serah ABIJO</a>.
+                        <a href="https://www.serahabijo.com/" target="_blank" rel="noopener noreferrer" class="signature-link font-extrabold text-pink-600">Serah ABIJO</a>.
                     </p>
                 </div>
             </div>
@@ -85,11 +114,14 @@
                 profession: '',
                 selectedGradient: 0,
                 bgImage: null,
+                layout: 'left',
+                shape: 'slant',
+                texture: 'dots',
                 gradients: [
                     { c1: '#2563eb', c2: '#7c3aed' }, { c1: '#db2777', c2: '#9333ea' },
                     { c1: '#059669', c2: '#10b981' }, { c1: '#f59e0b', c2: '#ea580c' },
                     { c1: '#0f172a', c2: '#334155' }, { c1: '#4f46e5', c2: '#06b6d4' },
-                    { c1: '#ef4444', c2: '#991b1b' }, { c1: '#8b5cf6', c2: '#d946ef' },
+                    { c1: '#ef4444', c2: '#991b1b' }, { c1: '#8b5cf6', c2: '#010101' },
                     { c1: '#14b8a6', c2: '#0f766e' }, { c1: '#111827', c2: '#6b7280' },
                     { c1: '#f472b6', c2: '#fb7185' }, { c1: '#312e81', c2: '#1e3a8a' }
                 ],
@@ -108,117 +140,104 @@
                     reader.readAsDataURL(file);
                 },
 
-                wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-                    const words = text.split(' ');
-                    let line = '';
-                    let testY = y;
-                    for (let n = 0; n < words.length; n++) {
-                        let testLine = line + words[n] + ' ';
-                        let metrics = ctx.measureText(testLine);
-                        if (metrics.width > maxWidth && n > 0) {
-                            ctx.fillText(line.trim(), x, testY);
-                            line = words[n] + ' ';
-                            testY += lineHeight;
-                        } else {
-                            line = testLine;
-                        }
-                    }
-                    ctx.fillText(line.trim(), x, testY);
-                },
-
                 draw() {
                     const canvas = document.getElementById('mainCanvas');
                     const ctx = canvas.getContext('2d');
                     canvas.width = 851; canvas.height = 315;
                     const w = canvas.width; const h = canvas.height;
 
-                    
                     ctx.fillStyle = '#f1f5f9';
                     ctx.fillRect(0, 0, w, h);
 
-                 
-                    const splitPoint = w * 0.42;
-                    const grad = ctx.createLinearGradient(splitPoint, 0, w, h);
+                    // LOGIQUE SPLIT POINT (COLLÉ À LA PHOTO)
+                    const splitPoint = this.layout === 'left' ? w * 0.38 : w * 0.62;
+
+                    // FORME GRADIENT
+                    const grad = ctx.createLinearGradient(0, 0, w, h);
                     grad.addColorStop(0, this.gradients[this.selectedGradient].c1);
                     grad.addColorStop(1, this.gradients[this.selectedGradient].c2);
                     ctx.fillStyle = grad;
                     
                     ctx.beginPath();
-                    ctx.moveTo(splitPoint, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h); ctx.lineTo(splitPoint + 60, h);
-                    ctx.closePath(); ctx.fill();
+                    if (this.shape === 'full') {
+                        ctx.rect(0, 0, w, h);
+                    } else if (this.layout === 'left') {
+                        ctx.moveTo(splitPoint, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h);
+                        if (this.shape === 'wave') ctx.bezierCurveTo(splitPoint - 80, h, splitPoint + 100, 0, splitPoint + 60, h);
+                        else ctx.lineTo(splitPoint + 60, h);
+                    } else {
+                        ctx.moveTo(0, 0); ctx.lineTo(splitPoint, 0);
+                        if (this.shape === 'wave') ctx.bezierCurveTo(splitPoint + 80, 0, splitPoint - 100, h, splitPoint - 60, h);
+                        else ctx.lineTo(splitPoint - 60, h);
+                        ctx.lineTo(0, h);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
 
-                   
+                    // ELEMENTS INTERIEURS (Cercle + Textures) 
                     ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(splitPoint, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h); ctx.lineTo(splitPoint + 60, h);
-                    ctx.closePath(); ctx.clip();
-                    
-                    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-                    ctx.lineWidth = 1;
-                    for(let i=0; i<w*2; i+=10) {
-                        ctx.beginPath();
-                        ctx.moveTo(i, 0); ctx.lineTo(i - 100, h);
-                        ctx.stroke();
+                    ctx.clip(); 
+
+                    // Cercle Design 
+                    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                    const circleX = this.layout === 'left' ? w * 0.82 : w * 0.18;
+                    ctx.beginPath(); ctx.arc(circleX, h * 0.25, 100, 0, Math.PI * 2); ctx.fill();
+
+                    // Textures
+                    if (this.texture === 'dots') {
+                        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                        for(let i=0; i<w; i+=25) {
+                            for(let j=0; j<h; j+=25) {
+                                ctx.beginPath(); ctx.arc(i, j, 1.5, 0, Math.PI*2); ctx.fill();
+                            }
+                        }
+                    } else if (this.texture === 'grid') {
+                        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                        for(let i=0; i<w; i+=20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
+                        for(let i=0; i<h; i+=20) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke(); }
+                    } else if (this.texture === 'grain') {
+                        for(let i=0; i<4000; i++) {
+                            ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.05})`;
+                            ctx.fillRect(Math.random()*w, Math.random()*h, 2, 2);
+                        }
                     }
                     ctx.restore();
 
-            
-                    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-                    ctx.beginPath(); ctx.arc(w * 0.85, h * 0.2, 80, 0, Math.PI * 2); ctx.fill();
-
-                    ctx.fillStyle = 'rgba(255,255,255,0.12)';
-                    for(let i=splitPoint+100; i<w; i+=25) {
-                        for(let j=0; j<h; j+=25) {
-                            ctx.beginPath(); ctx.arc(i, j, 1.5, 0, Math.PI*2); ctx.fill();
-                        }
-                    }
-
-                    
-                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(splitPoint, 0);
-                    ctx.lineTo(splitPoint + 60, h);
-                    ctx.stroke();
-
-        
-                    const imgX = 50; const imgY = 45; 
-                    const imgW = splitPoint - 30; const imgH = h - 90;
+                    // PHOTO (Format collé au gradient)
+                    const imgW = w * 0.32; const imgH = h - 80;
+                    const imgX = this.layout === 'left' ? 45 : w - imgW - 45;
+                    const imgY = 40;
 
                     if (this.bgImage) {
                         ctx.save();
-                        ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 40; ctx.shadowOffsetX = 15;
-                        this.roundRect(ctx, imgX, imgY - 15, imgW, imgH, 25);
+                        ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 40; ctx.shadowOffsetX = this.layout === 'left' ? 15 : -15;
+                        this.roundRect(ctx, imgX, imgY - 5, imgW, imgH, 25);
                         ctx.fillStyle = "white"; ctx.fill(); ctx.clip();
-                        ctx.shadowBlur = 0;
                         let ratio = Math.max(imgW / this.bgImage.width, imgH / this.bgImage.height);
-                        ctx.drawImage(this.bgImage, imgX + (imgW - this.bgImage.width * ratio)/2, imgY - 15, this.bgImage.width * ratio, this.bgImage.height * ratio);
+                        ctx.drawImage(this.bgImage, imgX + (imgW - this.bgImage.width * ratio)/2, imgY - 5, this.bgImage.width * ratio, this.bgImage.height * ratio);
                         ctx.restore();
                     } else {
                         ctx.fillStyle = '#ffffff';
-                        this.roundRect(ctx, imgX, imgY - 15, imgW, imgH, 25, true);
+                        this.roundRect(ctx, imgX, imgY - 5, imgW, imgH, 25, true);
                     }
 
-    
-                    const textPaddingLeft = splitPoint + 100;
-                    const maxTextWidth = w - textPaddingLeft - 60;
+                    // 5. TEXTE (Blanc sur gradient)
+                    const textX = this.layout === 'left' ? splitPoint + 110 : 70;
+                    const maxTWidth = w * 0.42;
                     ctx.textAlign = 'left';
                     
                     ctx.fillStyle = 'rgba(255,255,255,0.7)';
                     ctx.font = 'bold 11px Plus Jakarta Sans';
                     ctx.letterSpacing = "4px";
-                    ctx.fillText("PROFIL PROFESSIONNEL", textPaddingLeft, h/2 - 45);
+                    ctx.fillText("PROFIL PROFESSIONNEL", textX, h/2 - 45);
 
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = '800 30px Plus Jakarta Sans';
-                    ctx.letterSpacing = "1px";
+                    ctx.fillStyle = '#ffffff'; 
+                    ctx.font = '800 32px Plus Jakarta Sans';
                     const prof = this.profession.toUpperCase() || 'TON MÉTIER ICI';
-                    this.wrapText(ctx, prof, textPaddingLeft, h/2, maxTextWidth, 38);
+                    this.wrapText(ctx, prof, textX, h/2 + 5, maxTWidth, 38);
 
-                    ctx.globalAlpha = 0.5;
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(textPaddingLeft, h/2 + 55, 60, 4);
-                    ctx.globalAlpha = 1.0;
+                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                    ctx.fillRect(textX, h/2 + 65, 60, 4);
                 },
 
                 roundRect(ctx, x, y, width, height, radius, fill) {
@@ -233,10 +252,22 @@
                     ctx.closePath(); if (fill) ctx.fill();
                 },
 
+                wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+                    const words = text.split(' '); let line = '';
+                    for (let n = 0; n < words.length; n++) {
+                        let testLine = line + words[n] + ' ';
+                        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                            ctx.fillText(line.trim(), x, y);
+                            line = words[n] + ' '; y += lineHeight;
+                        } else { line = testLine; }
+                    }
+                    ctx.fillText(line.trim(), x, y);
+                },
+
                 download() {
                     const canvas = document.getElementById('mainCanvas');
                     const link = document.createElement('a');
-                    link.download = `banniere-facebook-pro.png`;
+                    link.download = `banniere-${this.profession || 'pro'}.png`;
                     link.href = canvas.toDataURL('image/png', 1.0);
                     link.click();
                 }
@@ -245,6 +276,7 @@
     </script>
 </body>
 </html>
+
 
 
 
